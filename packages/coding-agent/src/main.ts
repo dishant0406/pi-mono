@@ -28,6 +28,7 @@ import { SessionManager } from "./core/session-manager.js";
 import { SettingsManager } from "./core/settings-manager.js";
 import { printTimings, time } from "./core/timings.js";
 import { allTools } from "./core/tools/index.js";
+import { getWhyOpsExtensionFactoryFromEnv } from "./core/whyops-runtime.js";
 import { runMigrations, showDeprecationWarnings } from "./migrations.js";
 import { InteractiveMode, runPrintMode, runRpcMode } from "./modes/index.js";
 import { initTheme, stopThemeWatcher } from "./modes/interactive/theme/theme.js";
@@ -648,11 +649,16 @@ export async function main(args: string[]) {
 	reportSettingsErrors(settingsManager, "startup");
 	const authStorage = AuthStorage.create();
 	const modelRegistry = new ModelRegistry(authStorage, getModelsPath());
+	const whyOpsExtensionFactory = getWhyOpsExtensionFactoryFromEnv({
+		piVersion: VERSION,
+		mode: firstPass.mode === "rpc" ? "rpc" : firstPass.print ? "print" : "interactive",
+	});
 
 	const resourceLoader = new DefaultResourceLoader({
 		cwd,
 		agentDir,
 		settingsManager,
+		extensionFactories: whyOpsExtensionFactory ? [whyOpsExtensionFactory] : undefined,
 		additionalExtensionPaths: firstPass.extensions,
 		additionalSkillPaths: firstPass.skills,
 		additionalPromptTemplatePaths: firstPass.promptTemplates,

@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { Agent, type AgentMessage, type ThinkingLevel } from "@mariozechner/pi-agent-core";
 import type { Message, Model } from "@mariozechner/pi-ai";
-import { getAgentDir, getDocsPath } from "../config.js";
+import { getAgentDir, getDocsPath, VERSION } from "../config.js";
 import { AgentSession } from "./agent-session.js";
 import { AuthStorage } from "./auth-storage.js";
 import { DEFAULT_THINKING_LEVEL } from "./defaults.js";
@@ -38,6 +38,7 @@ import {
 	withFileMutationQueue,
 	writeTool,
 } from "./tools/index.js";
+import { getWhyOpsExtensionFactoryFromEnv } from "./whyops-runtime.js";
 
 export interface CreateAgentSessionOptions {
 	/** Working directory for project-local discovery. Default: process.cwd() */
@@ -179,7 +180,13 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 	const sessionManager = options.sessionManager ?? SessionManager.create(cwd, getDefaultSessionDir(cwd, agentDir));
 
 	if (!resourceLoader) {
-		resourceLoader = new DefaultResourceLoader({ cwd, agentDir, settingsManager });
+		const whyOpsExtensionFactory = getWhyOpsExtensionFactoryFromEnv({ piVersion: VERSION });
+		resourceLoader = new DefaultResourceLoader({
+			cwd,
+			agentDir,
+			settingsManager,
+			extensionFactories: whyOpsExtensionFactory ? [whyOpsExtensionFactory] : undefined,
+		});
 		await resourceLoader.reload();
 		time("resourceLoader.reload");
 	}
